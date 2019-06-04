@@ -1,0 +1,366 @@
+        ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄ·
+        ³ IPX Protocol º
+        ÔÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¼
+      1/ Truy‹n th“ng IPX:
+      1.1/ î nghªa:
+      Th¨c chãt, c c t c v truy‹n  th“ng th“ng qua netbios ­‹u ­Ÿøc th¨c
+      hi¬n böi IPX. Do ­¢, ­ th¨c hi¬n thao t c truy‹n tr¨c ti‰p th ipx
+      l… phŸóng  th¤c lî tŸöng. Ngo…i  ra, vôi phŸóng th¤c  n…y ta c¢ th
+      "ti‰t ki¬m" ­Ÿøc  v—ng nhô c¢ k¡ch thŸôc khoàng  25 KB do kh“ng cän
+      phài nâp netbios.
+
+      1.2/ Nguyˆn téc:
+      IPX ch© cho ph‚p kiu truy‹n datagram. C c d§ li¬u truy‹n th¨c hi¬n
+      theo c c  packet c¢ dâng qui  ­«nh riˆng. C c packet  phài ­Ÿøc göi
+      th“ng qua c c  socket v… c c socket n…y phài  ­Ÿøc ­«nh nghªa trŸôc
+      ­¢ bêng h…nh ­›ng mö socket. Th“ng thŸõng, vi¬c truy‹n th“ng gi§a 2
+      PCs m… ta già s¦ c¢ tˆn l… WSA v… WSB th¨c hi¬n nhŸ sau:
+
+                    WSA                               WSB
+                Open Socket                     Open Socket
+                Get Network Address of B        Get Network Address of A
+                Send Packet to B                Receive Data Packet
+                Receive Data Packet             Send Packet to A
+                Close Socket                    Close Socket
+
+      Kh“ng c¢ có ch‰ t¨ ­›ng ­àm bào an to…n cho c c packet ­Ÿøc göi ­i.
+      Do ­¢ khi th¨c hi¬n c c t c v trao ­™i th“ng tin gi§a c c ¤ng dng
+      th“ng qua phŸóng th¤c n…y ­•i h‘i ch£ng ta phài t¨ thi‰t lçp m›t có
+      ch‰ v‹ kim tra an to…n th“ng tin nhçn v… th“ng tin göi.
+
+      2/ C c kh–i d§ li¬u phc v truy‹n th“ng:
+
+      2.1/ Event Control Block:
+      C¢ vai  tr• vôi phŸóng  th¤c truy‹n IPX  tŸóng t¨ nhŸ  NCB (Network
+      Control Block) vôi  phŸóng th¤c truy‹n Netbios. Do  ­¢, ¤ng vôi mši
+      t c v truy‹n th“ng th¨c hi¬n trˆn IPX, ch£ng ta s„ d…nh cho n¢ m›t
+      bi‰n kiu ECB riˆng. Cãu tr£c cœa kh–i n…y nhŸ sau:
+
+       struct ECB
+           {
+           void far        *link_address;
+           void far        (*event_service_routine)(void);
+           unsigned char   in_use;
+           unsigned char   completion_code;
+           unsigned int    socket_number;
+           unsigned int    connection_id;      /* returned by Listen */
+           unsigned int    rest_of_workspace;
+           unsigned char   driver_workspace  [12];
+           unsigned char   immediate_address [ 6];
+           unsigned int    packet_count;
+           struct {
+               void far    *address;   // first for ipx header buffer
+               unsigned int length;    // second for message buffer
+               } packet [2];
+           };
+      Trong ­¢:
+
+      * link_address: ®«a ch© liˆn k‰t. Do IPX d—ng riˆng.
+
+      * (*event_service_routine)(void):  ®«a ch© xa ­‰n thŸõng trnh d«ch v.
+      Mši khi t c v truy‹n th“ng k‰t th£c, thŸõng trnh n…y ­Ÿøc g”i th¨c
+hi¬n. ThŸõng trnh d«ch v l… m›t thœ tc ­Ÿøc xƒy d¨ng tuƒn theo c c qui téc
+sau:
+        + ®Ÿøc g”i th¨c hi¬n böi m›t lõi g”i xa (Far procedure).
+        + C c ngét b« cãm.
+        + Cíp thanh ghi ES:SI ch© v…o ECB tŸóng ¤ng.
+        + C c thanh ghi phài ­Ÿøc bào to…n.
+        + Thanh ghi DS kh“ng hën ch© ­«nh v…o phƒn ­oân d§ li¬u cœa chŸóng
+trnh.
+        + TrŸõng IN_USE trong ECB tŸóng ¤ng phài ­Ÿøc ­ít bêng 0.
+        + Kh“ng th¨c hi¬n c c t c v xuãt nhçp.
+
+s„       ­Ÿøc g”i khi t c v truy‹n tŸóng ¤ng k‰t th£c(tŸóng t¨ POST_ROUTINE
+      cœa Netbios).
+
+      * in_use: Khi t c v th¨c hi¬n, gi  tr« n…y ­Ÿøc ­ít kh c 0 cho ­‰n
+      khi n…o t c v k‰t th£c. N‰u ECB c¢ liˆn k‰t vôi m›t
+
+      * completion_code: Tnh trâng k‰t th£c t c  v. Bêng 0 n‰u kh“ng c¢
+      lši. NgŸøc lâi, gi  tr« má lši mang î nghªa nhŸ sau:
+
+              0xEC      Connection servered by remote workstation
+              0xED      No answer from destination or connection failed
+              0xEE      No such connection
+              0xEF      Local connection table is full
+              0xF9      ECB cannot be canceled
+              0xFA      No path to destination
+              0xFC      ECB not active, or has been canceled
+              0xFD      Invalid packet length
+              0xFE      Socket is full, or packet is undeliverable
+              0xFF      Dest socket not open, local socket already open
+                        or network failure.
+
+      * socket_number: Gi  tr« socket number m… ta ­á mö v… t c v truy‹n
+      d§ li¬u s„ th¨c hi¬n th“ng qua socket ­¢.
+
+      * connection_id: ®Ÿøc IPX ­i‹n v…o sau t c v nhçn.
+
+      * rest_of_workspace:      ÄÂÄ Kh“ng gian c•n lâi.
+                                 ³
+      * driver_workspace  [12]: ÄÙ
+
+      * immediate_address [ 6]: Gi  tr« node address cœa WS gän nhãt ­¢ng
+      vai tr• l… "cäu  n–i" trung gian m… packet s„ ­i  qua ­¢ ­ ­‰n vôi
+      WS ­¡ch.  NhŸ vçy c¢  khà nèng gi   tr« n…y l…  node address cœa WS
+      ­¡ch. Ta c¢ th d—ng gi  tr« n…y ­Ÿøc trà v‹ trong trŸõng tŸóng ¤ng
+      cœa m›t ECB  d—ng trong t c v nhçn  trŸôc ­¢ ­ tr¨c ti‰p  göi lâi
+      th“ng  tin cho  ch¡nh WS  ­¢. N‰u  gi  tr«  trŸõng n…y  ­Ÿøc ­ít l…
+      0xFFFFFFFFFFFF th c¢ nghªa l… göi th“ng qua bãt kï cäu n–i n…o.
+
+      * packet_count: S– v—ng d§ li¬u liˆn quan (IPXheader v… Dataportion)
+
+      * packet: Màng quàn lî c c v—ng ­¬m ch¤a d§ li¬u liˆn quan.
+
+      2.2/ IPX header:
+
+          struct IPXHEADER
+              {
+              unsigned int    checksum;
+              unsigned int    length;
+              unsigned char   transport_control;
+              unsigned char   packet_type;
+              unsigned char   dest_network_number [4];
+              unsigned char   dest_network_node   [6];
+              unsigned int    dest_network_socket;
+              unsigned char   source_network_number [4];
+              unsigned char   source_network_node   [6];
+              unsigned int    source_network_socket;
+              unsigned char   dataportion;
+              };
+
+      Trong ­¢:
+      * checksum: Ch© d—ng trong phŸóng  th¤c truy‹n th“ng XNS. Trong IPX
+      gi  tr« n…y lu“n ­ít l… 0xFFFF.(Gi  tr« n…y do IPX quàn lî)
+
+      * length:  K¡ch thŸôc  to…n b›  packet (IPXHEADER  + DATA portion).
+      Giôi hân gi  tr« n…y l… 30 + 0 --> 30 + 546 (bytes).(Do IPX)
+
+      * transport_control: ®‰m  s– cäu n–i  m… packet ­á  truy‹n qua. Gi 
+      tr« ­‰m t¥ 0 ­‰n 16 th packet b« hœy.(Do IPX)
+
+      * packet_type: D—ng cho Xerox. Vôi IPX gi  tr« n…y l… 4.
+
+      * dest_network_number [4]: Ch© ­«nh network segment cœa remote WS.
+
+      * dest_network_node [6]: ®«a  ch© vçt lî cœa remote  WS. N‰u ta ch©
+      ­«nh gi  tr« n…y l… 0xFFFFFFFFFFFF th destination s„ l… tãt cà c c
+      WS trˆn mâng.
+
+      * dest_network_socket: Gi  tr« socket d—ng liˆn k‰t cœa remote WS.
+
+      * source_network_number [4]:Ä¿
+                                   ³
+      * source_network_node [6]:  ÄÅÄ TŸóng t¨ nhŸ trˆn nhŸng  cho local WS.
+                                   ³
+      * source_network_socket:   ÄÄÙ        (Do IPX)
+
+      * Dataportion: V—ng  ­¬m d§ li¬u  liˆn quan, c¢  th ­ít chung  vôi
+      kh–i IPX header. Khi ­¢, trong ECB tŸóng ¤ng ta ­ít packet_count l…
+      1 v… ch© d—ng phän  t¦ ­äu cœa màng packet trong ECB  ­¢ ­ quàn lî
+      ­«a ch© v…  k¡ch thŸôc kh–i IPX n…y.  NgŸøc lâi, ta phài d—ng  cà 2
+      phän t¦  cœa màng packet  n¢i trˆn ­  quàn lî län  lŸøt 2 kh–i IPX
+      header v… dataportion riˆng bi¬t,  v… gi  tr« cœa packet_count phài
+      ­Ÿøc ­ít l… 2.
+
+      3/ Th¨c h…nh truy‹n th“ng IPX:
+
+      3.1/ Kim tra s¨ thi‰t lçp cœa IPX:
+      Input:    AX = 0x7A00
+                Int  0x2F
+      Output:
+          if    Al != 0xFF:     Error installed IPX
+          else
+                (AL == 0xFF:)   OK
+                ES:DI -> H…m d«ch v IPX_SPX.(far function)
+
+      Sau t c  v kim tra  th…nh c“ng, ES:DI  ch¤a ­«a ch©  thŸõng trnh
+      phc v cho c c  d«ch v cœa IPX v… SPX. Ta lŸu  lâi ­«a ch© n…y ­
+      phc v cho lõi g”i c c d«ch v IPX v‹ sau.
+
+      3.2/ C c d«ch v:
+      H…m d«ch v IPX c¢ th cung cãp  cho ch£ng ta c c d«ch v v‹ truy‹n
+      th“ng theo phŸóng th¤c IPX nhŸ sau:
+
+                  N›i Dung                  Má l¬nh
+                =============               =======
+                Open socket                  0x00
+                Close socket                 0x01
+                Get local target             0x02
+                Send packet                  0x03
+                Listen for packet            0x04
+                Schedule ipx event           0x05
+                Cancel event                 0x06
+                Get internetwork address     0x09
+                Relinquish control           0x0A
+                Disconnect from target       0x0B
+
+      3.2/ G”i d«ch v IPX:
+      Sau khi ­á  chuån b« v—ng IPXheader, v—ng ­¬m  d§ li¬u v… bi‰n kiu
+      ECB theo ­£ng yˆu cäu, Ta c¢ th ti‰n h…nh t c v truy‹n th“ng trˆn
+      IPX theo m›t trong hai c ch sau
+
+      3.2.1/ Th“ng qua h…m d«ch v:
+      Input:    ES:SI -> Bi‰n kiu ECB tŸóng ¤ng.
+                BX = Má l¬nh cœa d«ch v.
+                G”i th¨c hi¬n h…m d«ch v IPX_SPX.
+
+      3.2.2/ Th“ng qua ngét 0x7A:
+      Ngét 0x7A c¢ th xem l… ­äu thƒm nhçp th¤ 2 v…o IPX. Th¨c chãt, khi
+      ­Ÿøc g”i th¨c hi¬n, ngét 0x7A lâi g”i ­‰n h…m d«ch v IPX.
+
+      V¡ d: ® ­¢ng m›t socket:
+          D—ng h…m IPX_SPX                    D—ng ngét 0x7A
+          ================                    ==============
+            BX = 0x0001;                        BX = 0x0001;
+            DX = socket;                        DX = socket;
+            G”i ipx_spx();                      Int 0x7A
+
+      Kh“ng nˆn d—ng  Int 0x7A thay cho h…m d«ch  v IPX_SPX khi ch£ng ta
+      kh“ng ­àm bào  rêng s„ kh“ng c¢ tranh chãp  trong vi¬c s¦ dng ngét
+      n…y. Nhãt l… khi  ch£ng ta c¢ î ­«nh s„ vi‰t  m›t ­oân chŸóng trnh
+      thŸõng tr£ th¨c  hi¬n c c t c v truy‹n th“ng  theo phŸóng th¤c IPX
+      th cän thi‰t phài tr nh c c va châm vôi c c ngét. NhŸ vçy, t–t hón
+      h‰t ta nˆn th¨c hi¬n c c t c v cœa IPX th“ng qua lõi g”i ­‰n ch¡nh
+      h…m d«ch v cœa n¢.
+
+      3.3/ G”i th¨c hi¬n d«ch v IPX:
+
+      3.3.0/ Open socket:
+
+        In:     BX = 0
+                AL = Socket type (0: short-live, 0xFF: long-live)
+                DX = Gi  tr« socket number ­èng kî mö. (0xBB9 -> 0x8000)
+        Out:    AL = (0: OK, 0xFE: socket table is full, 0xFF: already exist)
+                DX = Gi  tr« socket mö ­Ÿøc.
+
+      C c socket kiu long-live ch© h‰t t c dng khi c¢ l¬nh close socket
+      ­¢. C c socket  kiu short-live s„ t¨ ­›ng mãt  ­i khi chŸóng trnh
+      s¦ dng n¢ k‰t th£c. Th“ng thŸõng, tãt cà c c socket cho m›t chŸóng
+      trnh thŸõng tr£ thŸõng d—ng kiu long-live.
+
+      3.3.1/ Close socket:
+        In:     BX = 01
+                DX = Socket number.
+        Out:    NONE
+
+      3.3.2/ IPX get local target: Lãy ­«a ch© cäu n–i ­‰n m›t WS n…o ­¢
+        In:     BX = 02
+                ES:SI -> struct {
+                                 byte dest_network_number[4]
+                                 byte dest_node_address[6]
+                                 byte dest_socket[2] }
+                ES:DI -> struct {
+                                 byte node_address[6] } ; Nhçn th“ng tin
+        Out:
+                AL = (0: OK, 0xFA: no path to destination)
+                CX = Thõi gian truy‹n t¡nh theo counticks.(1s = 18.2)
+                ES:DI -> V—ng ­¬m nhçn th“ng tin.
+
+      3.3.3/ IPX send packet:
+      TrŸôc h‰t phài thi‰t lçp c c gi  tr« cho ECB v… IPX tŸóng ¤ng:
+        ECB:
+                socket_number: Socket m… trâm göi mö.
+                event_svc_routine: A far pointer or null.
+                immediate_address: Node_address cœa cäu n–i ­‰n remote WS.
+                Màng packet quàn lî c c v—ng ipx v… data cœa packet.
+        IPX:
+                packet_type = 4
+                dest_network_number: ÄÂÄ Network number v… node address
+                dest_node_address    ÄÙ  cœa remote WS.
+                dest_socket : socket m… remote WS mö ­ nhçn th“ng tin.
+
+      Sau ­¢ th¨c hi¬n t c v th“ng qua d«ch v 03 cœa IPX:
+        In:     BX = 03
+                ES:DI -> ECB liˆn quan.
+        Out:    NONE
+
+      Sau khi l¬nh ­Ÿøc ph t ra, vi¬c  th¨c hi¬n ch© ­Ÿøc g”i l… k‰t th£c
+      n‰u gi  tr« cœa trŸõng In_use trong  bi‰n kiu ECB liˆn quan c¢ gi 
+      tr« l… 0. Khi ­¢, ta phài kim tra tnh trâng k‰t th£c t c v th“ng
+      qua gi  tr«  cœa trŸõng completion_code. Gi  tr«  trŸõng n…y bêng 0
+      n‰u t c v th…nh c“ng. NgŸøc lâi, n¢ ch¤a gi  tr« má lši cœa t c v
+      nhŸ sau:
+
+              0xFC:     t c v b« hœy;
+              0xFD:     packet nh‘ hón 30 bytes hay lôn hón 576 bytes;
+              0xFF:     hardware network failure.
+
+      3.3.4/ IPX listen for packet:
+      TrŸôc h‰t, ti‰n h…nh khöi ­›ng bi‰n kiu ECB tŸóng ¤ng nhŸ sau:
+          Socket_number: Gi   tr« socket m…  WS s„ nhçn  packet th“ng qua
+          ­¢. Th“ng thŸõng gi  tr« n…y l…  gi  tr« trà v‹ trong thanh ghi
+          DX do m›t l¬nh mö socket th…nh c“ng trŸôc ­¢ trˆn WS nhçn th“ng
+          tin.
+
+          Eevent_svc_routine: Ti‰n  trnh th¨c hi¬n khi  t c v k‰t th£c.
+          ®ít gi  tr« NULL n‰u kh“ng ch© ­«nh thŸõng trnh phc v n…y.
+
+          Màng packet quàn lî c c v—ng ipx v… data.
+
+      Sau ­¢ th¨c hi¬n lõi g”i d«ch v IPX:
+        In:     BX = 04
+                ES:DI -> ECB liˆn quan.
+                AL = (0: Yˆu cäu ­Ÿøc chãp nhçn; 0xFF: Kh“ng c¢ socket)
+                T c v ch© k‰t th£c t–t khi completion_code == 0.
+
+        Out:    V—ng dataportion nhçn ­Ÿøc th“ng tin n‰u t c v ho…n tãt.
+                Gi  tr« trà lâi trong  trŸõng immediate cœa bi‰n kiu ECB
+                liˆn quan ch¤a cäu n–i ­‰n WS m… ta v¥a nhçn th“ng tin t¥
+                n¢. N‰u ch£ng ta mu–n göi packet lâi cho ch¡nh WS n…y th
+                ta d—ng gi  tr« trà v‹ n…y ­ít cho ch¡nh trŸõng immediate
+                cœa ECB phc v cho t c v göi.
+
+      3.3.5/ IPX breath:
+      ®ít c c  ti‰n trnh cœa IPX  trong trâng th i nghª  ­ chõ ho…n tãt
+      m›t t c v m… IPX ­ang th¨c hi¬n.
+
+        In:     BX = 0x0Ah
+        Out:    NONE
+
+      3.3.6/ IPX get Internetwork address:
+      ®”c gi  tr« network number v… node address cœa WS hi¬n h…nh.
+        In:     BX = 0x09
+                ES:SI -> struct {
+                                 byte network_number[4]
+                                 byte node_address[6]
+                                }       ; Nhçn th“ng tin
+        Out:    ES:SI -> v—ng ­¬m nhçn ­Ÿøc th“ng tin.
+
+      3.3.7/ IPX, SPX  CancelEvent:
+      Cét ngang c c t c v dö dang cœa IPX hay SPX.
+
+        In:     BX = 0x06
+                ES:SI -> ECB liˆn quan ­‰n t c v cän hœy b‘.
+        Out:    AL = (0: OK; 0xF9: Unable; 0xFF: This ECB not used).
+
+      3.3.8/ IPX disconnect from target:
+      Th“ng b o cho listening WS bi‰t  trâng th i cœa m›t socket m… th“ng
+      qua ­¢ n¢ ­ang léng nghe ­ ­¢n nhçn th“ng tin ­á chãm d¤t.
+      Kh“ng nˆn d—ng h…m n…y trong c c thœ tc post_routine cœa ECB.
+
+        In:     BX = 0x0B
+                ES:SI -> struct
+                           {
+                                byte dest_network_number[4]
+                                byte dest_node_address[6]
+                                byte dest_socket[2]
+                           }            ; request buffer.
+        Out:    None
+
+      3.3.9/ IPX schedule IPX Event:
+      Qui ­«nh  thõi gian tr  hoán (t¡nh bêng  counticks; 18.2 nh«p  = 1
+      giƒy) cho m›t m›t t c v liˆn  quan ­‰n ECB ­Ÿøc ch© ­«nh. Khi thõi
+      gian n…y k‰t th£c, gi  tr« trŸõng  in_use ­Ÿøc ­ít bêng 0 v… thŸõng
+      trnh ESR ­Ÿøc g”i th¨c hi¬n.
+
+        In:     BX = 0x05
+                AX = gi  tr« delay (t¡nh bêng ticks)
+                ES:SI -> ECB (vôi ­äy ­œ c c gi  tr« cän thi‰t cho
+                              t c v m… n¢ s„ th¨c hi¬n v… b« ­i‹u ph–i).
+        Out:    None
+
+      C c th“ng tin kh c, Bân c¢ th  tham khào chŸóng trnh quàn lî mâng
+      th“ng qua phŸóng th¤c truy‹n th“ng IPX: MASTER-TO-RSLAVER.
+
+

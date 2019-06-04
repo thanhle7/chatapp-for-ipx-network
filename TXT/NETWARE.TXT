@@ -1,0 +1,303 @@
+                                N E T W A R E
+     ÚÄÄÄÄÄÄÄÄ·
+     ³BINDERY º
+     ÔÍÍÍÍÍÍÍÍ¼
+      1/ ®«nh nghªa:
+      L… có sö d§ li¬u cœa h¬ ­i‹u  h…nh Netware; cho  ph‚p quàn lî c c
+      th¨c th(entities) v… ­–i tŸøng(objects) trˆn m›t File server. Th“ng tin
+lŸu tr§ ­Ÿøc t™ ch¤c phƒn cãp v… c¢ t¡nh chãt k‰ th¥a vôi 3 m¤c nhŸ sau:
+
+        * C c th¨c th hay ­–i tŸøng.
+        * Sö h§u cœa mši th¨c th hay c c sö h§u.
+        * C c gi  tr« sö h§u hay c c gi  tr«.
+
+      C¢ nhi‹u kiu  ­–i tŸøng ­Ÿøc lŸu tr§ trong  bindery. Vôi mši
+­–i tŸøng c¢  tŸóng ¤ng  c c ch¤c  nèng v…  chœ quy‹n(properties)  riˆng. Mši
+sö h§u tŸóng t¨ c¢ m›t hoíc nhi‹u gi  tr« cœa n¢.
+
+      M›t s– object tiˆu biu nhŸ sau:
+      C c  users, c c  user groups,  file servers,  print servers,  print
+      queues. C c ¤ng  dng trˆn mâng c¢ th truy  cçp ­‰n bindery ­ thu
+      thçp c c th“ng tin v‹ c c objects.
+
+      Bindery cœa  netware ­Ÿøc lŸu  tr§ trong c c  tçp tin trˆn  thŸ mc
+      SYS:SYSTEM vôi thu›c t¡nh S hoíc H v… phän tˆn:
+
+        Net$Bind.sys, Net$Bval.sys (Netware 286)
+        Net$Obj.sys, Net$Val.sys   (Netware 386)
+
+      C c tçp  tin n…y ­Ÿøc  mö trong su–t  qu  trnh hoât  ­›ng cœa File
+      server.
+
+      2/ ®íc t¡nh d§ li¬u trˆn Bindery:
+      2.1/ T¡nh ­›ng(dynamic): L… c c ­–i  tŸøng d§ li¬u c¢ t¡nh chãt t˜n
+      tâi nhãt thõi;  ph t sinh trong qu  trnh file  server ­Ÿøc boot v…
+      mãt ­i khi k‰t th£c hoât ­›ng cœa file server.
+
+      V¡ d: ®–i tŸøng File server c¢ t¡nh ­›ng.
+
+      2.2/ T¡nh  tªnh(static): L… c c ­–i  tŸøng d§ li¬u c¢  t¡nh chãt c–
+      ­«nh kh“ng ph thu›c v…o trâng th i cœa file server.
+
+      V¡ d: ®–i tŸønng  USER khi ­Ÿøc ­«nh nghªa s„ t˜n  tâi mái cho ­‰n
+      khi n…o bân x¢a n¢ ­i(syscon program).
+
+        NhŸ vçy c c d§ li¬u ­›ng s„ phài ­Ÿøc thi‰t lçp mši khi server
+ ­Ÿøc boot lˆn.
+
+      3/ C c cãp d§ li¬u cœa Bindery:
+      3.1/ ®–i tŸøng(object): L… c c th¨c th ­Ÿøc ­ít tˆn (vd: user). Th“ng
+tin cho mši th¨c th g˜m c¢:
+
+        +  Oject ID:  Gi  tr«  hexa d…i  4 bytes  duy nhãt  trˆn mši file
+      server cho  ph‚p ãn ­«nh m›t  object. Gi  tr« n…y  ­Ÿøc tâo khi tâo
+      m›t  object.  ®íc  bi¬t  gi   tr«  00000001h  ­Ÿøc  d—ng  riˆng cho
+      SUPERVISOR. C c gi  tr« n…y ­Ÿøc biu din ngŸøc trong v—ng nhô.
+
+        + Object name: Tr« chuši d…i 48 bytes, k‰t th£c bêng má kî t¨ 0: tˆn
+cœa Object
+
+        + Object type: Tr« s– d…i 2  bytes, nhçn ­«nh kiu cœa Object nhŸ
+      sau:
+        0001: User.          0002: Group.          0003: Print server.
+        0004: File server.   0005: Job server      0006: Gateway
+        0007: Print queue    0008: Archive queue   0009: Archive server.
+        000A: Job queue      FFFF: For searching.  0000: Unknown
+
+        + Object flag: Cho bi‰t bàn chãt cœa th¨c th l… tªnh(gi  tr« bêng 0)
+hay ­›ng(gi  tr« bêng 1).
+
+        + Object security: Cho bi‰t quy‹n truy cçp ­‰n object n…y t¥ c c th¨c
+th kh c th“ng qua c c bits ­Ÿøc biu din trong 1 byte gi  tr« vôi mši n§a 4
+bits c¢ î nghªa nhŸ sau:
+
+                 Anyone         0 0 0 0
+                 Logged in      0 0 0 1
+                 Object itself  0 0 1 0
+                 Supervisor     0 0 1 1
+                 Netware only   0 1 0 0
+        V¡ d: Gi  tr« 0x44h c¢ nghªa: Nerware only, Read and Write.
+
+        + Properties flag: Cho bi‰t object c¢ sö h§u hay kh“ng?(0=No;
+0FFh=Yes).
+
+      3.2/ C c sö h§u: Mši objects c¢ m›t  danh s ch c c s÷ h§u, cho ph‚p
+      m“ tà v… cung cãp th“ng tin v‹ object ­¢. Mši sö h§u mang c c th“ng tin
+sau:
+
+        + Property name: Chuši tˆn 16 bytes ­íc trŸng cho sö h§u ­¢. Ch£ng ta
+c¢ th t¨ ­ít c c tˆn riˆng. Novell ­á ­ít sìn  m›t s– tˆn sö h§u sau:
+
+                 LOGIN_CONTROL          ACCOUNT_SERVERS
+                 ACCOUNT_BALANCE        PASSWORD
+                 SECURITY_EQUALS        GROUP_MEMBERS
+                 GROUP_I'M_IN           NET_ADDRESS
+                 IDENTIFICATION         OPERATORS
+
+        + Property flags: Cho bi‰t bàn chãt cœa property; c¢ t¡nh tªnh hay
+­›ng, gi  tr« cœa n¢ l… m›t tçp høp hay ch© m›t phän th¦ duy nhãt. C c bits cœa
+property flags c¢ î nghªa nhŸ sau:
+
+                 Static         . . . . . . . 0         (Tªnh)
+                 Dynamic        . . . . . . . 1         (®›ng)
+                 Item           . . . . . . 0 .         (Phän t¦)
+                 Set            . . . . . . 1 .         (Tçp høp)
+                 Reserved       x x x x x x . .         (D…nh riˆng)
+        VD: User name:  Item property; gi  tr« cœa n¢ ch© duy nhãt l… user
+                        ­¢.
+            User group: Set property; gi  tr« cœa n¢ l… danh s ch c c th…nh
+                        viˆn (list of object names) users.
+        C c d«ch v v‹ Bindery ch© cung cãp c c th“ng tin v‹ set property.
+
+        + Property security: Qui ­«nh quy‹n truy cçp ­‰n property (tŸóng t¨ nhŸ
+object security).
+
+        + Property values flag: Cho bi‰t property c¢ gi  tr« hay kh“ng (0=No;
+0FF=OK).
+
+      V¡ d: property  GROUPS_I'M_IN m“ tà m›t nh¢m m…  object n…y l… m›t
+      th…nh viˆn. NhŸ  vçy, c¢ th n¢i properties cho  ph‚p phàn  nh to…n
+      b› th‰  giôi th¨c c c thu›c  t¡nh cœa object. Mši  object c¢ th c¢
+      kh“ng hoíc nhi‹u properties.
+
+      3.3/  C c gi  tr« sö h§u: C¢ th  xem l…  c c d§  li¬u cœa  property.
+C c gi  tr« sö h§u c¢ th ö hai dâng l…  tçp høp(set) v… phän t¦ duy
+nhãt. C c gi  tr« n…y cãt tr§ trong t¥ng phƒn ­oân k¡ch thŸôc 128 bytes.
+
+      V¡ d: gi  tr« SECURITY_EQUALS l… m›t property values dŸôi dâng tçp
+      høp; n¢ ch¤a  danh s ch c c objects m… ­–i  tŸøng mang property n…y
+      c¢ security_equivalent.
+
+      Novell ­á  ­«nh nghªa trŸôc  m›t s– c c  property dâng tçp  høp nhŸ
+      sau: GROUP_MEMBERS, GROUP_I'M_IN, SECURITY_EQUALS, Q_USERS(queue of
+      users), Q_SERVERS, Q_OPERATORS, MANAGERS, OBJ_SUPERVISORS.
+
+      Mši property item phàn  nh th“ng  tin v‹ object. Th“ng tin phàn ành
+      c¢ th l…  m›t gi  tr« ­ón hay  l… m›t chuši gi  tr«(dŸôi  dâng m›t
+      cãu tr£c) phàn  nh cho ­–i tŸøng ­¢.
+
+      V¡ d:  Property item LOGIN_CONTROL  l… cãu tr£c  c¢ c c th“ng  tin
+      sau:
+
+       offset        Fields                       size        type
+       0       Accounting expiration Date         3 bytes     byte
+       3       Account disable flag               1 byte      byte
+       4       Password expiration date           3 bytes     byte
+       7       Graces logins remaining            1 byte      byte
+       8       Password expiration interval       2 bytes     word
+       10      Grace login reset value            1 byte      byte
+       11      Minimum password length            1 byte      byte
+       12      Minimum concurrent connections     2 bytes     word
+       14      Allowed login time bitmap          42 bytes    byte
+       56      last login date and time           6 bytes     byte
+       62      Restriction Flags                  1 byte      byte
+       63      Unused                             1 byte      byte
+       64      Maximum disk usage(in blocks)      4 bytes     long
+       68      Bad login count                    2 bytes     word
+       70      Next reset time                    4 bytes     long
+       74      bad login address                  12 bytes    byte
+      M›t s– c c property items ­Ÿøc Novell ­«nh nghªa trŸôc nhŸ sau:
+      LOGIN_CONTROL, PASSWORD, IDENTIFICATION, NET_ADDRESS, ...
+
+        ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ·
+        ³M y Cœa Bân C¢ ®Ÿøc N–i Mâng Hay Kh“ng ?º
+        ÔÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¼
+        Ta c¢ c c phŸóng ph p kim tra sau:
+      1/ C¢ nâp v…o module Share chŸa:
+        in: ah = 010        out: if al = 0ff then OK
+            al = 0               else  'Kh“ng c¢'
+            int  021h       (ch© d—ng cho DOS > 3.00)
+
+      2/ Xem c¢ remote drive trˆn m y kh“ng:
+      Ta s„ th¦ kim tra c c drive t¥ C ­‰n Z(gi  tr« t¥ 3 ­‰n 26). NhŸng
+      phài loâi tr¥ c c CD-ROM c¢ th c¢ trˆn m y. Ta d—ng ngét 0x2f.
+
+        In: ah = 015h
+            al = 0
+            int  02fh
+        Out: if bx > 0 then { bx = s– drive CD trˆn m y pc
+                              cx = s– r th¤ t¨ cœa CD ­äu tiˆn.
+                              vôi: 3 -> D, 4 -> E, ....    }
+
+      Sau ­¢ ta d—ng bi‰n ­‰m t¥ gi  tr« lôn hón phâm vi c c gi  tr« d—ng
+      cho c c  drive ™ ­ªa m‹m  hay c c CD c¢  th c¢ cho ­‰n  tr« s– lôn
+      nhãt l… 26:
+
+        In: ah = 044h
+            al = 9
+            bl = s– hi¬u drive (<=26)
+            int  021h
+        Out: if bit th¤ 12 cœa dx bêng 1 th drive
+             tŸóng ¤ng vôi s– hi¬u ­ít trong bl l…
+             remote drive.
+
+      3/ Kim  tra ngét 05C  c¢ ­Ÿøc ­ít  hay kh“ng, sau  ­¢ d—ng lõi g”i
+      ngét v… kim tra k‰t quà trà lõi:
+
+        NCB  kiemtra;           // Network Control Block
+        void interrupt *ngat_5c;
+        ngat_5c = getvect(0x5c);
+        if (ngat_5c == (void far *)NULL)
+           {
+               printf("Netbios not load...");
+               exit(1);
+           };
+        kiemtra.NCB_COMMAND = 0x7f;
+        kiemtra.NCB_CMD_CPLT = 0xff;
+        _ES = FP_SEG(&kiemtra);
+        _BX = FP_OFF(&kiemtra);
+        _AX = 0x0100;
+        geninterrupt(0x5c);
+        if (kiemtra.NCB_RETCODE != 0x3)
+           {
+                printf("Netbios not found(no response from int 0x5c)...");
+                exit(1);
+           };
+
+      4/ ®”c version cœa mâng:
+        In: ah = 0EAh                            Out: if bx != 0 then OK!
+            al = 1                                    ( BH = major
+            bx = 0                                      BL = minor version )
+            ES:DI -> 50 byte-length Reply buffer
+            int  021h
+
+      5/ Th“ng thŸõng: ® kim tra ­ón giàn nhãt, ta ch© cän th¨c hi¬n:
+        + Share c¢ ­Ÿøc nâp v…o kh“ng ?
+        + C¢ remote drive kh“ng ?
+
+        ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ·
+        ³Nhçn Di¬n M›t WorkStation º
+        ÔÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¼
+      1/ Machine Name:
+        In: ax = 05D00               Out: if ch != 0 then
+            ds:dx -> string_name          { String_name -> tˆn m y
+            int  021h                       cl = net_bios_name_number }
+
+      2/ Netware User IDs: Ti‰n h…nh theo hai bŸôc:
+        + ®”c Connection Number:
+        In: ah = 0DCh     Out: al = conect_number ; in range 1 .. 100
+            int  021
+        + Chuån b« hai v—ng ­¬m d—ng göi v… nhçn th“ng tin:
+        struc
+         {
+          unsigned int  request_length;
+          unsigned char subfunction;
+          unsigned char buffer_connect_num;
+         } GOI;
+        struc
+         {
+          unsigned int  reply_length;
+          unsigned long object_id;
+          unsigned int  object_type;
+          char          object_name[48];
+          char          login_time[7]
+         } NHAN;
+      G”i h…m nhçn th“ng tin nhŸ sau:
+        In: GOI.request_length = 2;
+            GOI.subfunction = 0x16;
+            GOI.buffer_connect_num = connect_num;
+            NHAN.reply_length = 61;
+            DS:SI -> GOI;
+            ES:DI -> NHAN;
+            ah = 0xE3;
+            int  0x21;
+
+      Ta c¢ th  ­Ÿa ra c c th“ng b o  t¥ th“ng tin nhçn ­Ÿøc  trong v—ng
+      ­¬m NHAN.
+
+        ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ·
+        ³ Giao Di¬n PC v… PC º
+        ÔÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¼
+        Mc  tiˆu: Th¨c  hi¬n trao  ­™i th“ng  tin gi§a  hai WS, ­i‹u n…y
+      kh“ng th th¨c hi¬n th“ng qua c c file ­¬m trˆn file server.
+
+      1/ C c kiu liˆn lâc PC -> PC trˆn mâng:
+      1.1/ Datagrams: Trao ­™i th“ng tin  kh“ng kim so t. Gi§a 2 PC phài
+      t¨ thi‰t lçp có ch‰ göi v… th“ng  b o nhçn læn nhau. NhŸ vçy c¢ khà
+      nèng th“ng ­i¬p göi ­i s„ kh“ng c¢ PC n…o nhçn cà.
+
+      1.2/ Session: Kiu  truy‹n th“ng tin c¢ t¡nh chãt  an to…n hón. M›t
+      v—ng liˆn k‰t phài ­Ÿøc mö ra gi§a 2 PC, sau ­¢ th“ng ­i¬p môi ­Ÿøc
+      göi v… qu  trnh nhçn ­Ÿøc kim tra chít ch„. Khi th“ng ­i¬p ­á ­‰n
+      ­¡ch th v—ng liˆn  k‰t s„ ­Ÿøc ­¢ng lâi ­ chuån  b« cho qu  trnh
+      truy‹n sau ­¢.
+
+      R’ r…ng kiu truy‹n Datagrams s„  nhanh ch¢ng hón nhŸng k‚m an to…n
+      hón so vôi kiu truy‹n Session.
+
+      2/ C c phŸóng th¤c truy‹n th“ng trˆn mâng:
+      Ta c¢ ba phŸóng th¤c truy‹n th“ng nhŸ sau:
+
+      2.1/ IPX  (Internetwork Packet Exchange):  PhŸóng th¤c n…y  ch© cho
+      ph‚p kiu truy‹n datagrams(datagrams service), nhŸng Novell bào ­àm
+      kiu truy‹n datagrams theo phŸóng th¤c  n…y ­ât m¤c an to…n lôn hón
+      90%.
+
+      2.2/  SPX  (Sequence  Packet  Exchange):  Ch©  cho ph‚p kiu truy‹n
+      Session (Session-Level communications).
+
+      2.3/ Netbios  (Network Basic Input/Output  System): L… phŸóng  th¤c
+      truy‹n th“ng  cung cãp böi  IBM cho c c  d«ch v truy‹n  th“ng gi§a
+      file  server v…  c c trâm.  PhŸóng th¤c  n…y cho  ph‚p cà  hai kiu
+      truy‹n datagrams v… session.
+

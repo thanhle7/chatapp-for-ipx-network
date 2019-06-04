@@ -1,0 +1,423 @@
+      ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ·
+      ³Lçp Trnh Giao Di¬n PC -> PC : NETBIOS º
+      ÔÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ¼
+
+      1/ Nguyˆn téc: Truy‹n th“ng gi§a 2 PCs A v… B:
+      1.1/ Kiu truy‹n datagrams:
+                   WS A                  WS B
+              Add name A              Add name B
+              Send message to B       Receive a message
+              Receive a message       Send message to A
+              Delete name A           Delete name B
+
+      1.2/ Kiu truy‹n session:
+                   WS A                  WS B
+              Add name A              Add name B
+              Listen(Wait for call)   Call WS A
+              Send message to B       Receive a message
+              Receive a message       Send message to A
+              Hang up on B            HAng up on A
+              Delete name A           Delete name B
+
+      2/ Kh–i ­i‹u khin (Network Control Block):
+      * Ch¤a c c th“ng tin sau:
+      byte NCB_COMMAND;               // command id
+      byte NCB_RETCODE;               // immediate return code
+      byte NCB_LSN;                   // local session number
+      byte NCB_NUM;                   // network name number
+      void far *NCB_BUFFER_PTR;       // address of message packet
+      word NCB_LENGTH;                // length of message packet
+      byte NCB_CALLNAME[16];          // name of the other computer
+      byte NCB_NAME[16];              // our network name
+      byte NCB_RTO;                   // receive time-out in 500 ms. incrs.
+      byte NCB_STO;                   // send time-out - 500 ms. increments
+      void interrupt (*POST_FUNC)(void);// address of POST routine
+      byte NCB_LANA_NUM;              // adapter number (0 or 1)
+      byte NCB_CMD_CPLT;              // final return code
+      byte NCB_RESERVE[14];           // Reserved area
+
+      2.1/ Netbios commands (COMMAND):
+      Qui ­«nh t c v th¨c hi¬n cng nhŸ  có ch‰ th¨c hi¬n t c v ­¢. Vôi
+      có  ch‰ chõ  (Wait) th  quy‹n ­i‹u  khin ch©  chuyn giao lâi cho
+      chŸóng trnh cœa ch£ng ta khi t c  v ­¢ ho…n tãt. Vôi có ch‰ kh“ng
+      chõ (No-Wait)  th ngŸøc lâi. C c  gi  tr« cho Netbios  command nhŸ
+      sau:
+
+        #define RESET                           0x32
+        #define CANCEL                          0x35
+        #define STATUS                          0xb3
+        #define STATUS_WAIT                     0x33
+        #define TRACE                           0xf9
+        #define TRACE_WAIT                      0x79
+        #define UNLINK                          0x70
+        #define ADD_NAME                        0xb0
+        #define ADD_NAME_WAIT                   0x30
+        #define ADD_GROUP_NAME                  0xb6
+        #define ADD_GROUP_NAME_WAIT             0x36
+        #define DELETE_NAME                     0xb1
+        #define DELETE_NAME_WAIT                0x31
+        #define CALL                            0x90
+        #define CALL_WAIT                       0x10
+        #define LISTEN                          0x91
+        #define LISTEN_WAIT                     0x11
+        #define HANG_UP                         0x92
+        #define HANG_UP_WAIT                    0x12
+        #define SEND                            0x94
+        #define SEND_WAIT                       0x14
+        #define SEND_NO_ACK                     0xf1
+        #define SEND_NO_ACK_WAIT                0x71
+        #define CHAIN_SEND                      0x97
+        #define CHAIN_SEND_WAIT                 0x17
+        #define CHAIN_SEND_NO_ACK               0xf2
+        #define CHAIN_SEND_NO_ACK_WAIT          0x72
+        #define RECEIVE                         0x95
+        #define RECEIVE_WAIT                    0x15
+        #define RECEIVE_ANY                     0x96
+        #define RECEIVE_ANY_WAIT                0x16
+        #define SESSION_STATUS                  0xb4
+        #define SESSION_STATUS_WAIT             0x34
+        #define SEND_DATAGRAM                   0xa0
+        #define SEND_DATAGRAM_WAIT              0x20
+        #define SEND_BCST_DATAGRAM              0xa2
+        #define SEND_BCST_DATAGRAM_WAIT         0x22
+        #define RECEIVE_DATAGRAM                0xa1
+        #define RECEIVE_DATAGRAM_WAIT           0x21
+        #define RECEIVE_BCST_DATAGRAM           0xa3
+        #define RECEIVE_BCST_DATAGRAM_WAIT      0x23
+      2.2/ Netbios Return codes (RETCODE):
+      Má lši t¤c thõi  ­Ÿøc trà lâi do Netbios. Gi  tr«  n…y ­Ÿøc ­ít khi
+      ti‰n trnh bét ­äu ­Ÿøc th¨c hi¬n.  Khi gi  tr« n…y l… 0xFF th t c
+      v væn chŸa ho…n  tãt. NgŸøc lâi, n‰u gi  tr« n…y  l… m›t s– kh c 0
+      th t c v gíp lši. î nghªa má lši ­¢ nhŸ sau:
+
+       00   "success",                      13   "invalid name num",
+       01   "invalid buffer length",        14   "no answer",
+       02   "ret code 02",                  15   "no local name",
+       03   "invalid command",              16   "name in use",
+       04   "ret code 04",                  17   "name is deleted",
+       05   "timed out",                    18   "abnormal end",
+       06   "buffer too small",             19   "name conflict",
+       07   "ret code 07",                  1A   "ret code 1A",
+       08   "invalid session num",          1B   "ret code 1B",
+       09   "no resource",                  1C   "ret code 1C",
+       0A   "session closed",               1D   "ret code 1D",
+       0B   "command cancelled",            1E   "ret code 1E",
+       0C   "ret code 0C",                  1F   "ret code 1F",
+       0D   "dupl. local name",             20   "ret code 20",
+       0E   "name table full",              21   "card busy",
+       0F   "active session",               22   "too many cmds",
+       10   "ret code 10",                  23   "invalid card num",
+       11   "session table full",           24   "cancel done",
+       12   "no one listening",             25   "ret code 25",
+                                            26   "cannot cancel"
+      N‰u s¦ dng co ch‰ No-wait th  chŸóng trnh cœa ch£ng ta phài lu“n
+      tham khào ­‰n gi   tr« n…y trong qu  trnh truy‹n ­  t¨ ­›ng x¦ lî
+      c c tnh hu–ng khi qu  trnh truy‹n ho…n tãt.
+
+      2.3/ Local Session number (LSN):
+      Gi  tr« trà v‹ sau m›t l¬nh listen hay call th…nh c“ng. Gi  tr« n…y
+      d—ng ­ ­âi  di¬n cho session tŸóng ¤ng trong  c c t c v liˆn quan
+      v‹ sau nhŸ Send, Receive, Hang Up.
+
+      2.4/ Name number (NUM):
+      Sau lõi  g”i add name m›t  tˆn n…o ­¢ v…o  bàng tˆn cc b›,  bân s„
+      nhçn ­Ÿøc m›t gi  tr« s– v… d—ng n¢ thay th‰ cho tˆn n¢i trˆn trong
+      tãt cà c c cƒu l¬nh c¢ liˆn quan ­‰n datagrams.
+
+      2.5/ Data buffer address SEG:OFF (BUFFER_PTR):
+      ®«a ch© v—ng ­¬m  ch¤a d§ li¬u cho c c h…nh ­›ng  nhçn v… göi th“ng
+      tin.
+
+      2.6/ Data buffer length (LENGTH):
+      Gi  tr« cho bi‰t k¡ch thŸôc t¡nh bêng bytes cœa v—ng ­¬m.
+
+      2.7/ 16 bytes long Remote Worstation Name (CALLNAME):
+      Tˆn cœa WS m… bân mu–n giao  di¬n. Chuši tˆn phài c¢ chi‹u d…i ­£ng
+      16 kî t¨.
+
+      2.8/ Local Name (NAME):
+      Tˆn ­èng  kî trong bàng tˆn  cc b›. Th“ng qua  ­¢ Novell nhçn ­«nh
+      ­Ÿøc ¤ng dng cœa ch£ng ta. Chuši  tˆn phài c¢ chi‹u d…i ­£ng 16 kî
+      t¨.
+
+      2.9/ Send, receive time out (RTO, SRO):
+      S– thõi  gian t–i ­a(t¡nh bêng  1/2 giƒy) cho c c  t c v send hoíc
+      receive.
+
+      2.10/ Post Routines (POST_FUNC):
+      H…m x¦ lî  ­Ÿøc g”i th¨c hi¬n khi  t c v truy‹n k‰t th£c.  H…m n…y
+      phài  ­Ÿøc thi‰t  k‰ nhŸ  m›t thœ  tc ngét;  ta phài  d—ng t¥ kh¢a
+      "interrupt"(trong ng“n ng§ C) hay d—ng l¬nh IRET k‰t th£c h…m(trong
+      høp ng§).  N‰u kh“ng mu–n ch©  ­«nh m›t thŸõng trnh  n…o cà th ta
+      g n tr« NULL trong khai b o ­«a ch© cœa h…m.
+
+      2.11/ Adapter number (LANA_NUM):
+      Ch© ­«nh network adapter m… ch£ng ta s„ s¦ dng.
+      0: primary.
+      1: alternate.
+
+      * Cho Adapter status command, ta c¢ c c ch© th« sau:
+      Kî  t¨ *  trong byte  ­äu tiˆn  cœa NCB_CALLNAME  nhêm ch© ­«nh ­‰n
+      Adapter cc b›.
+
+      * Cho Session status command, ta c¢ ch© th« nhŸ sau:
+      Kî t¨  * trong byte  ­äu tiˆn cœa  NCB_NAME nhêm nhçn  th“ng tin v‹
+      trâng th i cœa session cœa tãt cà c c name.
+
+      * Cho Chain Send command:
+      2 byte ­äu cœa NCB_CALLNAME ch¤a chi‹u d…i cœa v—ng ­¬m th¤ hai, v…
+      4 byte ti‰p theo nhŸ trˆn ch¤a ­«a ch© cœa v—ng ­¬m n…y.
+
+      2.12/ Final return code (CMD_CPLT):
+      C¢ gi  tr« 0xFF trong khi ti‰n  trnh ­ang th¨c hi¬n. Sau ­¢ n¢ cho
+      bi‰t ti‰n trnh c¢ th…nh c“ng hay kh“ng.
+      --------
+
+      3. Th¨c h…nh truy‹n datagrams:
+      Cho ph‚p truy‹n th“ng  gi§a 2 WS m… kh“ng c¢ bãt  kï r…ng bu›t n…o.
+      C c t c  v truy‹n th¨c  hi¬n th“ng qua  d«ch v cœa  ngét 5C. ch¤c
+      nèng 01 (trong AH), ch¤c nèng con 00 (trong AL), ES:BX ch© ­‰n v—ng
+      ­¬m l… bi‰n c¢  kiu NCB m… gi  tr« c c trŸõng  cœa n¢ thay ­™i t—y
+      theo mc tiˆu  cœa t c v. Già s¦  ta th¨c hi¬n t c v  truy‹n gi§a
+      WSA v… WSB. C c bŸôc län lŸøt nhŸ sau:
+
+      3.1/ ®èng kî tˆn:
+      Cà WSA  v… WSB phài ­èng  kî tˆn cœa ch£ng  trˆn ­Ÿõng truy‹n mâng.
+      Th“ng thŸõng c c ¤ng dng s„ s¦  dng m›t bi‰n kiu NCB chuyˆn bi¬t
+      cho h…nh ­›ng  n…y. ® ­èng kî tˆn,  c c ¤ng dng s„ khöi  ­›ng cho
+      bi‰n kiu NCB nhŸ sau:
+          + Gi  tr« chuši tˆn 16 kî t¨ ­ít trong trŸõng NCB_NAME.
+          + Gi  tr« ADDNAME ­ít trong trŸõng COMMAND.
+      Sau ­¢ g”i d«ch v cœa ngét 5C nhŸ n¢i trˆn.
+
+      3.2/ Bét ­äu truy‹n datagram:
+      Sau khi t c v ­èng kî tˆn trˆn  mši WS ho…n tãt, c c ¤ng dng nhçn
+      ­Ÿøc gi   tr« s– ­íc trŸng  cho tˆn n…y (NAME_NUMBER)  trong trŸõng
+      NCB_NUM cœa bi‰n kiu  NCB n¢i trˆn. Khi ­¢, c c WS  bét ­äu c¢ th
+      truy‹n th“ng cho nhau.
+
+      * M›t ¤ng dng mu–n göi th“ng tin  s„ chuån b« m›t bi‰n kiu NCB c¢
+      n›i dung nhŸ sau:
+          + TrŸõng COMMAND c¢ gi  tr« l… SEND_DATAGRAM.
+          + TrŸõng NCB_NUM mang gi  tr« NAME_NUMBER n¢i trˆn.
+          + TrŸõng  NCB_LENGTH v… trŸõng NCB_BUFFER_PTR  quàn lî v—ng ­¬m
+      ch¤a th“ng tin truy‹n c¢ k¡ch thŸôc kh“ng vŸøt qu  512 bytes.
+          + TrŸõng NCB_CALLNAME ch¤a tˆn cœa WS nhçn th“ng tin.
+          + G n gi  tr« tr hoán trong trŸõng NCB_STO (v¡ d 20).
+
+      * M›t ¤ng dng mu–n nhçn th“ng tin s„ chuån b« m›t bi‰n kiu NCB c¢
+      n›i dung nhŸ sau:
+          + TrŸõng COMMAND c¢ gi  tr« l… RECEIVE_DATAGRAM.
+          + TrŸõng NCB_NUM mang gi  tr« NAME_NUMBER n¢i trˆn.
+          + TrŸõng  NCB_LENGTH v… trŸõng NCB_BUFFER_PTR  quàn lî v—ng ­¬m
+      ch¤a th“ng tin truy‹n c¢ k¡ch thŸôc kh“ng vŸøt qu  512 bytes.
+          + G n gi  tri tr« hoán trong trŸõng NCB_RTO (v¡ d 20).
+
+      3.3/ Khi ho…n tãt c c t c v truy‹n, ¤ng dng nˆn x¢a ­i c c tˆn ­á
+      ­èng kî nhêm tr ch c c "­ng ­›" v‹ sau vôi c c ¤ng dng kh c. Bi‰n
+      kiu NCB ­Ÿøc chuån b« nhŸ sau:
+          + TrŸõng NCB_COMMAND c¢ gi  tr« l… DELETE_NAME.
+          + TrŸõng NCB_NAME ch¤a tˆn cän x¢a.
+
+      3.4/ LŸu î:
+          Th“ng thŸõng  c c t c v liˆn  quan ­‰n vi¬c truy‹n  th“ng th¨c
+      hi¬n th“ng  qua netbios kh“ng ­Ÿøc  thi h…nh ngay. Do  ­¢ ta thŸõng
+      d—ng m›t cõ hi¬u ­ quàn lî c c t c v n…y. C c cõ hi¬u n…y s„ ­Ÿøc
+      bçt böi  thŸõng trnh ngét  m… ­«a ch©  cœa n¢ s„  ­ít trong trŸõng
+      POST_FUNC cœa bi‰n kiu NCB m… ta  d—ng trong t c v tŸóng ¤ng. Cèn
+      c¤ trˆn cõ hi¬u n…y, c c thœ tc s„ th“ng b o th“ng tin truy‹n nhçn
+      ­Ÿøc.
+          ® tr nh  mãt m t d§ li¬u  theo phŸóng th¤c truy‹n  n…y, ta nˆn
+      cho trâm nhçn ö  "tŸ th‰" sìn s…ng trŸôc khi trâm  göi ph t d§ li¬u
+      truy‹n.
+          M›t ¤ng dng göi nhçn sau khi  ti‰n h…nh ­èng kî tˆn trˆn ­Ÿõng
+      truy‹n mâng c¢ th th¨c hi¬n t c v nhçn v… sau ­¢ l… göi th“ng tin
+      ­‰n  ch¡nh  n¢  (bêng  c ch  ­ít  gi   tr«  tˆn cœa n¢ trong trŸõng
+      NCB_CALLNAME). NhŸ vçy, n¢ c¢ th thu  nhçn ­Ÿøc th“ng tin m… n¢ ­á
+      göi ­i. NhŸng khi ­¢, c c thŸõng  trnh phc v ngét cœa c c t c v
+      n…y kh“ng ­Ÿøc  g”i th¨c hi¬n ­äy ­œ.  N‰u ¤ng dng cèn c¤  trˆn cõ
+      hi¬u t™  ch¤c theo c c nguyˆn  téc n¢i trˆn ­  ­i‹u ph–i vi¬c th¨c
+      hi¬n c c  t c v truy‹n  th“ng th chéc  rêng sau ­¢  s„ c¢ t c  v
+      kh“ng bao giõ ­Ÿøc th¨c hi¬n n§a (lî do l… cõ hi¬u qui ­«nh cho t c
+      v n…y kh“ng ­Ÿøc kh“i phc).
+
+      4. Th¨c h…nh truy‹n Session:
+      Cho ph‚p truy‹n th“ng gi§a 2 WS th“ng qua m›t v—ng truy‹n x c ­«nh.
+      C c t c v  thi‰t lçp v—ng truy‹n v…  göi th“ng tin gi§a 2  WS ­Ÿøc
+      ti‰n h…nh th“ng qua d«ch v cœa  ngét 5C ; ch¤c nèng 01 (trong AH),
+      ch¤c nèng con 00 (trong AL), ES:BX ch© ­‰n v—ng ­¬m l… bi‰n c¢ kiu
+      NCB m… gi  tr« c c trŸõng cœa n¢ thay ­™i t—y theo mc tiˆu cœa t c
+      v. Già s¦ ta th¨c hi¬n t c v truy‹n gi§a WSA v… WSB. C c bŸôc län
+      lŸøt nhŸ sau:
+
+      4.1/ ®èng kî tˆn:
+      Cà WSA  v… WSB phài ­èng  kî tˆn cœa ch£ng  trˆn ­Ÿõng truy‹n mâng.
+      Th“ng thŸõng c c ¤ng dng s„ s¦  dng m›t bi‰n kiu NCB chuyˆn bi¬t
+      cho h…nh ­›ng  n…y. ® ­èng kî tˆn,  c c ¤ng dng s„ khöi  ­›ng cho
+      bi‰n kiu NCB nhŸ sau:
+          + Gi  tr« chuši tˆn 16 kî t¨ ­ít trong trŸõng NCB_NAME.
+          + Gi  tr« ADDNAME ­ít trong trŸõng COMMAND.
+      Sau ­¢ g”i d«ch v cœa ngét 5C nhŸ n¢i trˆn.
+
+      4.2/ Göi t¡n hi¬u thi‰t lçp session:
+      M›t WS s„ ­¢ng vai tr• Caller  v… WS c•n lâi ­¢ng vai tr• Listener.
+      Bàn thƒn  WS caller phài ch©  ­«nh ch¡nh x c tˆn  cœa WS giao di¬n,
+      Riˆng WS listener th  c¢ th ch© ra m›t WS giao  di¬n x c ­«nh hay
+      WS  bãt  kï  (bêng  c ch  ­ít  kî  t¨  *  tŸøng  trŸng trong trŸõng
+      NCB_CALLNAME. Gi  tr« khöi ­›ng cho bi‰n kiu NCB nhŸ sau:
+
+      * Vôi WS Listener:
+          + Gi  tr« tˆn cc b› cœa n¢ ­ít trong NCB_NAME.
+          + Gi  tr« tˆn cœa WS ­–i ¤ng(khi ch© ch¡nh x c) hay kî t¨ *(bãt
+      kï WS n…o) trong trŸõng NCB_CALLNAME.
+          + Gi  tr« LISTEN trong trŸõng NCB_COMMAND.
+
+      * Vôi WS Caller:
+          + Gi  tr« tˆn cc b› cœa n¢ ­ít trong NCB_NAME.
+          + Gi  tr« tˆn cœa WS ­–i ¤ng trong trŸõng NCB_CALLNAME.
+          + Gi  tr« CALL trong trŸõng NCB_COMMAND.
+
+      LŸu î: Tˆn s¦ dng trong thi‰t  lçp session phài høp l¬ (­á ­èng kî
+      th…nh c“ng).
+
+      4.3/ Nhçn v… göi th“ng tin:
+      Sau khi  th¨c hi¬n ho…n ch©nh  bŸôc thi‰t lçp session,  mši WS nhçn
+      ­Ÿøc gi   tr« local session number  tŸóng ¤ng vôi session  ­¢ trong
+      trŸõng NCB_LSN  cœa bi‰n kiu NCB  m… ¤ng dng trˆn  mši WS ­á d—ng
+      trong trong bŸôc thi‰t lçp session. Vôi  gi  tr« n…y, c c WS c¢ th
+      bét ­äu th¨c hi¬n truy‹n th“ng tin  læn nhau. Bi‰n kiu NCB cho c c
+      t c v n…y ­Ÿøc chuån b« nhŸ sau:
+          + Gi  tr« LSN nhçn ­Ÿøc t¥ t c v trˆn ­ít v…o trŸõng NCB_LSN.
+          + TrŸõng  NCB_LENGTH v… trŸõng NCB_BUFFER_PTR  quàn lî v—ng ­¬m
+      ch¤a th“ng tin s„ tài ­i (trong trŸõng høp göi) hay v—ng ­¬m s„ ­ít
+      th“ng tin v…o (trong trŸõng høp nhçn)
+          + TrŸõng NCB_COMMAND s„ ­Ÿøc g n  gi  tr« SEND (trong tŸõng høp
+      göi) hay gi  tr« RECEIVE (trong trŸõng høp nhçn).
+
+      4.4/ K‰t th£c v—ng truy‹n:
+      V s– lŸøng session hân ch‰, sau khi kh“ng cän d—ng ­‰n v—ng truy‹n
+      n§a th c c WS c¢ th ­¢ng v—ng truy‹n ­¢ lâi th“ng qua gi  tr« LSN
+      cœa v—ng truy‹n ­¢ m… n¢ ­á nhçn ­Ÿøc. Bi‰n kiu NCB cho t c v n…y
+      ­Ÿøc chuån b« nhŸ sau:
+          + ®ít v…o trŸõng NCB_LSN gi   tr« LSN tŸóng ¤ng vôi session cän
+      ­¢ng.
+          + ®ít gi  tr« HANG_UP v…o trŸõng NCB_COMMAND.
+
+      5/ C c t c v ­i‹u khin kh c:
+      5.1/ ®”c trâng th i cœa session:
+      Cho ph‚p ta lãy  th“ng tin v‹ tãt cà c c session  cœa m›t tˆn trong
+      bàng tˆn cc b› hay cœa tãt cà  c c tˆn trong bàng tˆn cc b›. D«ch
+      v n…y  kh“ng cho ph‚p  th¨c hi¬n trˆn  c c session nói  trâm kh c.
+      Th¨c hi¬n: D—ng ngét  5Ch vôi bi‰n kiu NCB c¢ c c  tham s– v…o nhŸ
+      sau:
+          + Gi  tr« SESSION_STATUS cho trŸõng NCB_COMMAND.
+          + TrŸõng  NCB_NAME ch¤a gi  tr«  tˆn(cœa m›t tˆn x c  ­«nh) hay
+      dãu * cho tãt cà c c tˆn hi¬n c¢ trong bàng tˆn.
+
+          + Tr« NULL cho c c trŸõng kh“ng liˆn quan kh c.
+          + TrŸõng  NCB_LENGTH v… trŸõng NCB_BUFFER_PTR  quàn lî v—ng ­¬m
+      nhçn th“ng tin c¢ cãu tr£c nhŸ sau:
+
+      struc {
+          unsigned char  name_num;
+          unsigned char  session_count;
+          unsigned char  datagram_count;
+          unsigned char  recv_any_count;
+          struct
+              {
+               unsigned char  lsn;
+               unsigned char  state;
+               char           local_name[16];
+               char           remote_name[16];
+               unsigned char  recv_count;
+               unsigned char  send_count;
+          } session_info[40]
+      }
+
+      Trong ­¢ trâng th i cœa m™i session c¢ th mang nh§ng gi  tr« vôi î
+      nghªa:
+      1   Listen pending.
+      2   Call pending.
+      3   Session established.
+      4   Hang up pending.
+      5   Hang up complete.
+      6   Session ended abnormally.
+
+      5.2/ ®”c trâng th i cœa Adapter:
+      Cho ph‚p lãy th“ng tin trâng th i adapter cœa m›t tˆn trˆn bàng tˆn
+      cc b› cœa m y hi¬n h…nh hay cœa m y kh c. Th¨c hi¬n: D—ng ngét 5Ch
+      vôi bi‰n kiu NCB c¢ tham s– v…o nhŸ sau:
+          + ®ít gi  tr« tˆn v…o NCB_NAME  (n‰u lãy th“ng tin tâi trâm ¤ng
+      dng).
+          + ®ít gi  tr« tˆn v…o NCB_CALLNAME (n‰u lãy th“ng tin trˆn trâm
+      kh c).
+          + Gi  tr« STATUS cho trŸõng COMMAND.
+          + C c trŸõng kh c mang gi  tr« ršng(NULL).
+          + TrŸõng  NCB_LENGTH v… trŸõng NCB_BUFFER_PTR  quàn lî v—ng ­¬m
+      nhçn th“ng tin c¢ cãu tr£c nhŸ sau:
+
+      struct {
+          unsigned char   card_id[6];
+          unsigned char   release_level;
+          unsigned char   reserved1;
+          unsigned char   type_of_adapter;
+          unsigned char   old_or_new_parameters;
+          unsigned int    reporting_period_minutes;
+
+          unsigned int    frame_reject_recvd_count;
+          unsigned int    frame_reject_sent_count;
+          unsigned int    recvd_I_frame_errors;
+
+          unsigned int    unsuccessful_transmissions;
+          unsigned long   good_transmissions;
+          unsigned long   good_receptions;
+          unsigned int    retransmissions;
+          unsigned int    exhausted_resource_count;
+          unsigned int    t1_timer_expired_count;
+          unsigned int    ti_timer_expired_count;
+          char            reserved2[4];
+          unsigned int    available_ncbs;
+          unsigned int    max_ncbs_configured;
+          unsigned int    max_ncbs_possible;
+          unsigned int    buffer_or_station_busy_count;
+          unsigned int    max_datagram_size;
+          unsigned int    pending_sessions;
+          unsigned int    max_sessions_configured;
+          unsigned int    max_sessions_possible;
+          unsigned int    max_frame_size;
+          int             name_count;
+          struct {
+              char            tbl_name[16];
+              unsigned char   tbl_name_number;
+              unsigned char   tbl_name_status;
+          } name_table[20];
+      }
+
+      Trong ­¢:
+          + Card_id: Gi  tri 6 byte ­«a ch© cœa card mâng (duy nhãt).
+          + Releave_level: Gi  tr« phän nguyˆn cœa version cœa netbios.
+          + Old_or_new_parameters: N§a byte ­äu cho bi‰t netbios ­Ÿøc bét
+      ­äu vôi tham s–  môi(c¢ tr« l… 2) hay tham s–  c(c¢ tr« l… 1). N§a
+      byte sau cho bi‰t phän phƒn cœa version cœa netbios.
+          + Exhausted_resource_count: S– län d§ li¬u b« mãt do netbios b«
+      tr…n v—ng ­¬m. Tãt cà c c trŸõng ­‰m  ­‹u ­i t¥ gi  tr« lôn nhãt c¢
+      th ch¤a  böi n¢ xu–ng  ­‰n gi   tr«  0, tr¥ trŸõng  høp cœa trŸõng
+      exhausted_resource_count.
+          + Tbl_name_number: Gi  tr« name number cœa tˆn.
+          + 8 bit cœa tbl_name_status c¢ î nghªa nhŸ sau:
+       x xxxx xxx
+       ³      ÀÁ´  000: Reg. in progress
+       ³        ³  100: Registered
+       ³        ÀÄ 101: De-registered     // tˆn b« x¢a nhŸng væn c•n
+       ³           110: Dupl detected                   session hoât ­›ng.
+       ³           111: Dupl; dereg pend.
+       ³
+       ÀÄÄÄÄÄÄÄÄÄÄ 0: Tˆn ­ón vi (unique name)
+                   1: Tˆn nh¢m (group name)
+
+      LŸu î: C c t c v truy‹n th“ng trˆn mâng c¢ th ­Ÿøc th¨c hi¬n ngay
+      t¤c thõi hay sau m›t khoàng thõi  gian n…o ­¢. Do ­¢, cän th¨c hi¬n
+      vi¬c kim tra tnh trâng cœa c c t c v sau mši lõi g”i ch£ng. Vi¬c
+      kim tra n…y c¢ th th¨c hi¬n ph–i høp vôi vi¬c kim tra tnh trâng
+      c c cõ hi¬u t™ ch¤c nhŸ n¢i trˆn.
+

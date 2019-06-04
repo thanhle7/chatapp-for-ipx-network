@@ -1,0 +1,568 @@
+      C c d«ch vž cœa DOS (Int 021h) cho lçp trnh mâng
+
+         C c d«ch vž sau  yˆu cäu phài ch© ra gi  tr«  type v… k¡ch thŸôc
+      mši v—ng ­¬m trong nh§ng lõi g”i. K¡ch thŸôc mši v—ng ­¬m bêng t™ng
+      cœa tãt  cà c c trŸõng c¢  trong v—ng ­¬m ­¢  tr¥ k¡ch thŸôc trŸõng
+      ch¤a k¡ch thŸôc  v—ng ­¬m. Tãt c c c c tˆn  d—ng phài c¢ k¡ch thŸôc
+      kh“ng vŸøt kh‘i chi‰u d…i qui ­«nh v… chuši tˆn phài c¢ má k‰t th£c
+      l… kî  t¨ 0. V—ng  ­¬m ch© böi  DS:SI l… v—ng  ­¬m yˆu cäu (request
+      buffer). V—ng ­¬m ch© böi ES:DI l… v—ng ­¬m nhçn (reply buffer).
+
+      C c t c vž n…y nhçn ­Ÿøc má lši trà v‹ trong AL. î nghªa cœa má lši
+      nhŸ sau:
+
+              000h         OK. No error found.
+              096h         Server is out of memory
+              0E9h         Member is already exist
+              0EAh         No such member.
+              0EBh         Not a set property.
+              0F0h         Wild card not allowed.
+              0F1h         Invalid Bindery security
+              0F8h         No privilege to modify.
+              0FBh         No such property.
+              0FCh         No such object.
+              0FEh         Server bindery locked.
+              0FFh         Bindery hardware failure
+
+      * M›t s– qui Ÿôc riˆng:
+                K¡ch thŸôc              Th¤ t¨ trong v—ng nhô
+        DD* :    4 bytes           Highest, Higher, Lower, Lowest
+        DW* :    2 bytes                    Higher, Lower
+
+      I/ C c d«ch vž trˆn Bindery:
+
+        1/ Tâo object:
+           (SUPERVISOR or MANAGER right)
+           In:  AH = 0E3h
+                DS:SI -> struct  {
+                            dw   k¡ch thŸôc
+                            db   type, bêng 032h.
+                            db   object flag
+                            db   object security
+                            dw*  object type
+                            db   chi‹u d…i tˆn object = 48
+                            db   48 bytes chuši tˆn object liˆn quan.
+                         }
+                ES:DI -> struct  {
+                            dw   chi‹u d…i
+                         }
+           Out: AL = completion code.
+
+           V¡ dž: Tâo user group c¢ tˆn l… AZ dâng tªnh. V—ng ­¬m yˆu cäu
+      nhŸ sau:
+
+           DS:SI-> dw      54              ; creat bindery object
+                   db      032h            ; Make
+                   db      0               ; object flag static
+                   db      3               ; anyone
+                   db      0, 2            ; user group type
+                   db      48
+                   db      'AZ'
+                   db      46 dup (0)
+
+        2/ Hœy object:
+           (SUPERVISOR or MANAGER right)
+           In:  AH = 0E3h
+                DS:SI -> struct  {
+                            dw   k¡ch thŸôc
+                            db   type, bêng 033h.
+                            dw*  object type
+                            db   chi‹u d…i tˆn object = 48
+                            db   48 bytes chuši tˆn object liˆn quan.
+                         }
+                ES:DI -> struct  {
+                            dw   chi‹u d…i
+                         }
+           Out: AL = completion code.
+
+        3/ Tâo property:
+           In:  AH = 0E3h
+                DS:SI -> struct  {
+                            dw   chi‹u d…i
+                            db   type, bêng 039h.
+                            dw*  object type ÄÄÄÄÄÄÄÂÄ cœa object liˆn
+                            db   48                 ³  quan d—ng property.
+                            db   48 bytes chuši tˆnÄÙ
+                            db   property flag
+                            db   property security
+                            db   16
+                            db   16 bytes chuši tˆn property.
+                         }
+                ES:DI -> struct  {
+                            dw   k¡ch thŸôc
+                         }
+           Out: AL = completion code.
+
+           V¡ dž: Tâo property 'BOSUNG' cho group 'EVERYONE'
+           DS:SI-> dw      71
+                   db      039h
+                   db      0, 2            ; object type
+                   db      48
+                   db      'EVERYONE'
+                   db      40 dup (0)
+                   db      2               ; property flag
+                   db      3               ; property security
+                   db      16
+                   db      'BOSUNG'
+                   db      10 dup (0)
+
+        4/ Hœy property:
+           In:  AH = 0E3h
+                DS:SI -> struct  {
+                            dw   chi‹u d…i
+                            db   type, bêng 03Ah.
+                            dw*  object type ÄÄÄÄÄÄÄÂÄ cœa object liˆn
+                            db   48                 ³  quan d—ng property.
+                            db   48 bytes chuši tˆnÄÙ
+                            db   16
+                            db   16 bytes chuši tˆn property.
+                         }
+                ES:DI -> struct  {
+                            dw   k¡ch thŸôc
+                         }
+           Out: AL = completion code.
+
+        5/ B™ sung hay hœy b‘ gi  tr« cho m›t set property:
+        (SUPERVISOR RIGHT)
+           In:  AH = 0E3h
+                DS:SI -> struct  {
+                            dw   k¡ch thŸôc
+                            db   type, (bêng 41h: thˆm; 42h: hœy)
+                            dw*  object type  ÄÄÄÄÄÄÄÄÂÄ C c th“ng tin
+                            db   chi‹u d…i tˆn = 48   ³  cœa Object mang
+                            db   48 bytes chuši tˆn ÄÄÙ  sö h§u.
+                            db   chi‹u d…i = 16     ÄÄÂÄ Th“ng tin v‹ sö
+                            db   16 bytes chuši tˆn ÄÄÙ  h§u ­Ÿøc t c ­›ng.
+                            dw*  object type ÄÄÄÄÄÄÄÄÄÂÄ C c th“ng tin
+                            db   chi‹u d…i tˆn = 48   ³  cœa Object tr¨c
+                            db   48 bytes chuši tˆn ÄÄÙ  thu›c sö h§u.
+                         }
+                ES:DI -> struct  {
+                            dw   k¡ch thŸôc
+                         }
+           Out: AL = completion code.
+
+           V¡ dž: B™ sung user 'GUEST' v…o user group 'MANAGER'. NhŸ vçy,
+      property liˆn quan c¢ tˆn l… 'GROUP_MEMBERS'. Gi  tr« thi‰t lçp cho
+      v—ng ­¬m yˆu cäu nhŸ sau:
+
+           DS:SI-> dw      T™ng c c trŸõng
+                   db      041h               ; B™ sung v…o
+                   db      0, 2               ; Group type
+                   db      48
+                   db      'MANAGER'          ; Group name
+                   db      41 dup (0)
+                   db      16
+                   db      'GROUP_MEMBERS'    ; Property name
+                   db      3 dup (0)
+                   db      0, 1
+                   db      48
+                   db      'GUEST'            ; User added
+                   db      43 dup (0)
+
+        6/ Thay ­™i security cœa m›t object:
+        (SUPERVISOR RIGHT)
+           In:  AH = 0E3h
+                DS:SI -> struct  {
+                            dw   k¡ch thŸôc
+                            db   type, ­ít bêng 038h
+                            db   gi  tr« security môi
+                            dw*  object type
+                            db   chi‹u d…i tˆn = 48
+                            db   chuši 48 bytes tˆn cœa object
+                ES:DI -> struct  {
+                            dw   k¡ch thŸôc
+                         }
+           Out: AL = completion code.
+
+           V¡  dž: ®ít  quy‹n truy  nhçp duy  nhãt ­‰n  user 'GUEST'  böi
+      'SUPERVISOR', tham s– cho v—ng ­¬m yˆu cäu nhŸ sau:
+
+          DS:SI-> dw      53              ; k¡ch thŸôc
+                  db      038h
+                  db      3               ; supervisor only
+                  db      0, 1            ; object type of GUEST
+                  db      47
+                  db      'GUEST'
+                  db      43 dup (0)
+
+        7/ Thay ­™i password cœa m›t object:
+        (SUPERVISOR right v… security cœa object phài cho ph‚p)
+           In:  AH = 0E3h
+                DS:SI -> struct  {
+                            dw   k¡ch thŸôc
+                            db   type, ­ít bêng 040h
+                            dw*  object type
+                            db   48:  chi‹u d…i tˆn
+                            db   48 bytes chuši tˆn object
+                            db   128: chi‹u d…i old_password
+                            db   128 bytes chuši old_password
+                            db   128: chi‹u d…i old_password
+                            db   128 bytes chuši old_password
+                         }
+                ES:DI -> struct  {
+                            dw   k¡ch thŸôc
+                         }
+           Out: AL = completion code.
+
+        8/ Thay ­™i security cœa m›t property:
+           In:  AH = 0E3h
+                DS:SI -> struct  {
+                            dw   k¡ch thŸôc
+                            db   type, bêng 03Bh
+                            dw*  object type
+                            db   chi‹u d…i tˆn = 48ÄÂÄ Cœa object liˆn
+                            db   48 bytes chuši tˆnÄÙ  liˆn quan
+                            db   gi  tr« security môi
+                            db   chi‹u d…i = 16ÄÂÄ tˆn cœa property
+                            db   16 bytes chušiÄÙ  ­Ÿøc t c ­›ng.
+           Out: AL = completion code.
+
+           V¡  dž:  ®ít  set   property  'GROUP_MEMBER'  cœa  user  group
+      'EVERYONE' th…nh item  property. Tham s– cho v—ng  ­¬m yˆu cäu ­Ÿøc
+      ­ít nhŸ sau:
+
+            DS:SI-> dw      70
+                    db      03Bh
+                    db      0, 2
+                    db      48
+                    db      'EVERYONE'
+                    db      40 dup (0)
+                    db      2               ; new property value
+                    db      16
+                    db      'GROUP_MEMBERS'
+                    db      3 dup (0)
+        LŸu î:  Ta kh“ng thŽ  tâo nƒng cãp  c c cho m›t  property. V¡ dž:
+      kh“ng thŽ ­Ÿa m›t Item property th…nh m›t Set property.
+
+        9/ ®¢ng  (hay mö) có sö  d§ li¬u bindery: Khi  h…nh ­›ng n…y ph t
+      ra, to…n b› h¬ th–ng s„ rói  v…o trâng th i 'ngh©'. S„ kh“ng c¢ m›t
+      yˆu cäu khai th c th“ng tin n…o  ­Ÿøc giài quy‰t cho ­‰n khi n…o c¢
+      ch© th« mö lâi bindery. Kh“ng nˆn duy tr tnh trâng n…y qu  lƒu.
+
+           In:  AH = 0E3h
+                DS:SI -> struct  {
+                            dw   k¡ch thŸôc
+                            db   type, bêng 044h: ­¢ng; 045h: mö.
+                         }
+                ES:DI -> struct  {
+                            dw   k¡ch thŸôc
+                         }
+           Out: AL = completion code.
+
+        10/ ®”c m¤c ­› truy xuãt cœa m›t object:
+           In:  AH = 0E3h
+                DS:SI -> struct  {         ; v—ng ­¬m yˆu cäu.
+                            dw   k¡ch thŸôc
+                            db   type, bêng 046h
+                         }
+                ES:DI -> struct  {         ; v—ng ­¬m nhçn
+                            dw   k¡ch thŸôc
+                            db   m¤c ­› truy xuãt cœa object
+                            dd*  object ID
+                         }
+           Out: AL = completion code
+                C c gi  tr« trà v‹ trong v—ng ­¬m ­èng kî böi ES:DI
+
+           V¡ dž: Vôi supervisor, m¤c ­› truy xuãt ­”c ­Ÿøc l… 033h.
+
+        11/ ®”c c c th“ng tin nhçn di¬n m›t object:
+           In:  AH = 0E3
+                DS:Si -> struct  {         ; v—ng ­¬m yˆu cäu.
+                            dw   k¡ch thŸôc
+                            db   type, bêng 035h
+                            dw*  object type
+                            db   48; chi‹u d…i tˆn object
+                            db   48 bytes chuši tˆn object
+                         }
+                ES:DI -> struct  {         ; v—ng ­¬m nhçn.
+                            dw   k¡ch thŸôc
+                            dd*  object ID
+                            dw*  object type
+                            db   object name
+                         }
+           Out: AL = completion code
+                C c th“ng tin kh c trong v—ng ­¬m ­èng kî böi ES:DI
+
+        12/ ®”c object name:
+           In:  AH =0E3h
+                DS:SI -> struct  {         ; v—ng ­¬m yˆu cäu
+                            dw   k¡ch thŸôc
+                            db   type, bêng 036h
+                            dd*  object ID
+                         }
+                ES:DI -> struct  {
+                            dw   k¡ch thŸôc
+                            dd*  object ID
+                            dw*  object type
+                            db   48 bytes chuši tˆn object
+                         }
+           Out: AL = completion code
+           C c th“ng tin kh c trong v—ng ­¬m yˆu cäu.
+
+        13/ M›t object c¢ thu›c v‹ set property cœa m›t object kh c ?
+           In:  AH = 0E3h
+                DS:SI -> struct  {
+                            dw   k¡ch thŸôc
+                            db   type, bêng 043h
+                            dw*  object type       ÄÄÂ cœa object
+                            db   48; chi‹u d…i tˆn   ³ sö h§u property
+                            db   48 bytes chuši tˆnÄÄÙ ­ang x‚t
+                            db   16; chi‹u d…i property
+                            db   16 bytes chuši tˆn property
+                            dw*  object type       ÄÄÂ cœa object ­Ÿøc
+                            db   48; chi‹u d…i tˆn   ³ x‚t tŸ c c th…nh
+                            db   48 bytes chuši tˆnÄÄÙ viˆn.
+                         }
+                ES:DI -> struct  {
+                            dw   k¡ch thŸôc
+                         }
+           Out: AL = completion code
+
+        14/ ®”c c c gi  tr« cœa m›t property ¤ng vôi m›t object cho trŸôc.
+           In:  AH = 0E3h
+                DS:SI -> struct  {
+                            dw   k¡ch thŸôc
+                            db   type, bêng 03Dh
+                            dw*  object type
+                            db   48; chi‹u d…i tˆn
+                            db   48 bytes chuši tˆn object
+                            db   segment number
+                            db   16; chi‹u d…i tˆn property
+                            db   16 bytes chuši tˆn property
+                         }
+                ES:DI -> struct  {
+                            dw   k¡ch thŸôc
+                            db   128 bytes gi  tr« property ­”c ­Ÿøc
+                            db   S– segment number c•n lâi
+                            db   property flag
+                         }
+           Out: AL = completion code
+
+           Khi bét ­äu  t c vž ­”c, gi  tr« segment  number ­ít bêng 0 v…
+      tuän t¨ tèng  lˆn m›t sau mši län  ­”c. Qu  trnh n…y k‰t  th£c khi
+      gi  tr« trà v‹ trong trŸõng 's– segment c•n lâi' bêng 0. Mši t c vž
+      ­”c th…nh c“ng ta nhçn ­Ÿøc 128 byte gi  tr« property.
+
+        15/ ®™i tˆn m›t object:
+           In:  AH = 0E3h
+                DS:SI -> struct  {
+                            dw   k¡ch thŸôc
+                            db   type, bêng 034h
+                            dw*  object type
+                            db   48; chi‹u d…i tˆn
+                            db   48 bytes chuši tˆn c cœa object
+                            db   48; chi‹u d…i tˆn
+                            db   48 bytes chuši tˆn môi cœa object
+                         }
+                ES:DI -> struct  {
+                            dw   k¡ch thŸôc
+                         }
+           Out: AL = completion code
+
+        16/ Tm ki‰m c c object:
+           In:  AH = 0E3h
+                DS:SI -> struct  {
+                            dw   k¡ch thŸôc
+                            db   type, ­ít bêng 037h
+                            dd*  object ID
+                            dw*  object type
+                            db   48; chi‹u d…i tˆn object
+                            db   48 bytes chuši tˆn object
+                         }
+                ES:DI -> struct  {
+                            dw   k¡ch thŸôc
+                            dd*  object ID
+                            dw*  object type
+                            db   48 bytes chuši tˆn object
+                            db   object flag
+                            db   object security
+                            db   object_has_properties
+                         }
+           Out: AL = completion code
+                C c th“ng tin nhçn ­Ÿøc trong v—ng ­¬m yˆu cäu ES:DI
+
+           LŸu î: Trong län g”i ­äu tiˆn,  gi  tr« cœa object ID cœA v—ng
+      ­¬m yˆu  cäu(DS:SI) ­Ÿøc ­ít bêng  0FFFFFFFFh. Sau mši t c  vž th¨c
+      hi¬n  th…nh c“ng(AL=0),  gi  tr«  n…y phài  ­Ÿøc ­ít  bêng gi   tr«
+      object ID trà  v‹ trong v—ng ­¬m nhçn th“ng  tin (ES:DI) t¥ m›t t c
+      vž trŸôc ­¢ ­Ž th¨c hi¬n thao t c tm k‰ ti‰p.
+
+        17/ ®”c gi  tr« property cœa mši object:
+           In:  AH = 0E3h
+                DS:SI -> struct  {
+                            dw   k¡ch thŸôc
+                            db   type, ­ít 03ch
+                            dw*  object type
+                            db   48; chi‹u d…i tˆn object
+                            db   48 bytes chuši tˆn object
+                            dd*  s– ti‰p theo
+                            db   16; chi‹u d…i tˆn property
+                            db   16 bytes chuši tˆn property
+                         }
+                ES:DI -> struct  {
+                            dw   k¡ch thŸôc
+                            db   16 bytes chuši tˆn property
+                            db   proper flag
+                            db   property security
+                            dd*  s– ti‰p theo
+                            db   property_has_value
+                            db   more_properties
+                         }
+           Out: AL = completion code
+                C c th“ng tin kh c trà v‹ trong v—ng ­¬m ES:DI
+
+           LŸu î:  Trong län g”i  ­äu tiˆn, gi   tr« cœa trŸõng  's– ti‰p
+      theo' ­Ÿøc ­ít bêng 0FFFFFFFFh. N‰u sau m›t lõi g”i th¨c hi¬n th…nh
+      c“ng(AL =  0), gi  tr« n…y  ­Ÿøc ­ít bêng ch¡nh  gi  tr« cœa trŸõng
+      's– ti‰p  theo' cœa v—ng  ­¬m nhçn th“ng  tin(ES:DI) t¥ m›t  t c vž
+      trŸôc ­¢.
+
+        18/ KiŽm tra password cœa m›t object:
+        KiŽm tra  m›t password cho trŸôc  c¢ phài l… password  cœa object
+      hay kh“ng ?
+
+           In:  AH = 0E3h
+                DS:SI -> struct  {
+                            dw   k¡ch thŸôc
+                            db   type, bêng 03Fh
+                            dw*  object type
+                            db   48; chi‹u d…i tˆn object
+                            db   48 bytes chuši tˆn object
+                            db   128; chi‹u d…i password
+                            db   128 bytes chuši n›i dung password
+                         }
+                ES:DI -> struct  {
+                            dw   k¡ch thŸôc
+                         }
+
+        19/ ®ít gi  tr« property cho m›t object:
+           In:  AH = 0E3h
+                DS:SI -> struct  {
+                            dw   k¡ch thŸôc
+                            db   type, 03Eh
+                            dw*  object type
+                            db   48; chi‹u d…i tˆn object
+                            db   48 bytes chuši tˆn object
+                            db   s– th¤ t¨ segment
+                            db   s– th¤ t¨ segment b« x¢a
+                            db   16; chi‹u d…i tˆn property
+                            db   16 bytes chuši tˆn property
+                            db   128 bytes segment ch¤a gi  tr« property
+                         }
+                ES:DI -> struct  {
+                            dw   k¡ch thŸôc
+                         }
+           Out: AL = completion code.
+
+      II/ C c d«ch vž liˆn k‰t:
+
+        1/ N–i WS vôi m›t file server:
+        WS phài ­ang n–i vôi m›t file server.
+           IN:  AH = 0F1h
+                AL = 0
+                DL = server connection number (1-8)
+           Out: AL completion code.
+                (0: OK; 0F8: already; 0FC: No such server; 0FF: No_answer)
+
+        2/ Cét ­¤t liˆn k‰t vôi m›t file server:
+           In:  AH = 0F1h
+                AL = 1
+                DL = server connection number
+           Out: AL = completiion code (0: OK; 0FF: No such connection)
+
+        3/ ®ít thŸ mžc truy xuãt cho l¬nh Login trong thŸ mžc SYS:LOGIN
+           In:  AH = 0E3h
+                DS:SI -> struct {
+                            dw   k¡ch thŸôc v—ng ­¬m
+                            db   type, ­ít bêng 01h
+                            db   s– ™ ­ªa
+                            db   chi‹u d…i ­Ÿõng dæn ­‰n thŸ mžc con
+                            db   chuši ­Ÿõng dæn ­‰n thŸ mžc con
+                         }
+                ES:DI -> struct  {
+                            dw   k¡ch thŸôc v—ng ­¬m ­ít bêng 0
+                         }
+           Out: AL = (0: OK; 0FF: error)
+
+        4/ Lãy th“ng tin liˆn k‰t:
+           In:  AH = 0E3
+                DS:SI -> struct  {
+                            dw   k¡ch thŸôc v—ng ­¬m
+                            db   ­ít gi  tr« 016h
+                            db   connection number
+                         }
+                ES:DI -> struct  {
+                            dw   k¡ch thŸôc v—ng ­¬m
+                            dd   4 byte ­ào object ID
+                            dw*  object type
+                            db   48 byte gi  tr« tˆn cœa object
+                            db   7 byte gi  tr« thõi gian login
+                                 (nèm t¡nh t¥ 0 cho nèm 1980, th ng, ng…y,
+                                  giõ, ph£t, giƒy v… ng…y trong tuän).
+                         }
+           Out: AL = 0 is OK
+
+        5/ ®”c connection number vôi server míc ­«nh:
+           In:  AH = 0DCh
+           Out: AL = connection number (1-100)
+                     CL-CH: chuši s– 2 kî t¨ ¤ng vôi gi  tr« s– trong AL
+
+        6/ ®”c c c gi  tr« cœa internet address:
+           In:  AH = 0E3h
+                DS:SI -> struct  {
+                            dw   k¡ch thŸôc v—ng ­¬m
+                            db   type, ­ít bêng 013h
+                            db   connection number
+                         }
+                ES:DI -> struct  {
+                            dw   k¡ch thŸôc v—ng ­¬m
+                            db   4 bytes network number
+                            db   6 bytes node address
+                            db   2 bytes socket number
+                         }
+           Out: AL = 0 is OK
+
+        7/ ®”c c c liˆn k‰t thi‰t lçp cho m›t object:
+           In:  AH = 0E3h
+                DS:SI -> struct  {
+                            dw   k¡ch thŸôc
+                            db   type, ­ít bêng 015h
+                            dw*  object type
+                            db   chi‹u d…i tˆn object
+                            db   48 bytes tˆn object
+                         }
+                ES:DI -> struct  {
+                            dw   k¡ch thŸôc
+                            db   s– liˆn k‰t (1-100)
+                            db   100 bytes gi  tr« connection number cœa
+                                 t¥ng liˆn k‰t.
+                         }
+           Out: AL = 0 is OK
+
+        8/ Login v…o filer míc ­«nh th“ng qua m›t object:
+           In:  AH = 0E3h
+                DS:SI -> struct  {
+                            dw   k¡ch thŸôc
+                            db   type, ­ít l… 014h
+                            dw*  object type
+                            db   chi‹u d…i tˆn object, ­ít l… 48
+                            db   48 bytes chuši tˆn object
+                            db   chi‹u d…i password, ­ít l… 128
+                            db   128 bytes chuši password
+                         }
+                ES:DI -> struct  {
+                            dw   k¡ch thŸôc
+                         }
+           Out: AL = 0 is OK
+
+        9/ Logout kh‘i tãt cà c c file server:
+           In:  AH = 0D7h
+           Out: None
+
+        10/ Logout t¥ 1 file server ­Ÿøc ch© ­«nh:
+           In:  AH = 0F1h
+                Al = 2
+                DL = connection ID cœa server ch© ­«nh (1-8)
+           Out: None
+
